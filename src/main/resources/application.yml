@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: commentArea
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/cc
+    username: root
+    password: 1111
+  security:
+    filter:
+      order: -100
+    jwt:
+      key: abcdefgjk
+      expire: 7
+server:
+  port: 8080
