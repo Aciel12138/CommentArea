@@ -6,6 +6,7 @@ import org.example.commentarea.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @RestController
@@ -16,8 +17,8 @@ public class CommentController {
     private CommentService commentService;
     
     @GetMapping("/list")
-    public RestBean<List<Comment>> listComments() {
-        List<Comment> comments = commentService.findAllComments();
+    public RestBean<List<Comment>> listComments(@RequestParam Integer pageId) {
+        List<Comment> comments = commentService.findAllComments(pageId);
         return RestBean.success(comments);
     }
     

@@ -13,6 +13,7 @@ public class Comment {
 
     @TableField("user_id")
     private Integer userId;
+    private Integer pageId;
     
     // Getters and setters are provided by Lombok @Data annotation
 }

@@ -13,4 +13,7 @@ spring:
       key: abcdefgjk
       expire: 7
 server:
-  port: 8080
+  # 绑定所有网卡，局域网可见
+  address: 0.0.0.0
+  # 端口自定义，避免冲突
+  port: 8081

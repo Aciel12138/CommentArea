@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书馆2</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>图书馆2</h1>
+        </div>
+        
+        <div class="navigation">
+            <button class="arrow" id="prevButton">←</button>
+            <button class="arrow" id="nextButton">→</button>
+        </div>
+        
+        <div class="image-container">
+            <img src="../static/图书馆2.jpg" alt="图书馆2">
+        </div>
+        
+        <div class="comments-section">
+            <button class="comments-toggle" id="toggleComments">
+                <span>展开评论区</span>
+                <span class="toggle-icon">▼</span>
+            </button>
+            <div id="commentsContainer">
+                <button class="add-comment-btn" id="addCommentBtn">添加评论</button>
+                <div class="add-comment-form" id="addCommentForm">
+                    <textarea id="commentContent" placeholder="请输入您的评论..."></textarea>
+                    <button id="submitComment">提交</button>
+                    <button class="cancel" id="cancelComment">取消</button>
+                    <div id="addCommentMessage"></div>
+                </div>
+                <ul class="comments-list" id="commentsList"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面ID (图书馆模块统一使用页面ID 4)
+        const PAGE_ID = 4;
+        
+        // 切换评论区显示/隐藏
+        const toggleButton = document.getElementById('toggleComments');
+        const commentsList = document.getElementById('commentsList');
+        const commentsContainer = document.getElementById('commentsContainer');
+        const addCommentBtn = document.getElementById('addCommentBtn');
+        const addCommentForm = document.getElementById('addCommentForm');
+        const commentContent = document.getElementById('commentContent');
+        const submitComment = document.getElementById('submitComment');
+        const cancelComment = document.getElementById('cancelComment');
+        const addCommentMessage = document.getElementById('addCommentMessage');
+        
+        // 页面加载时检查是否有token
+        const token = localStorage.getItem('token');
+        if (!token) {
+            // 如果没有token，显示错误信息
+            commentsContainer.innerHTML = '<div class="error">请先登录</div>';
+        }
+        
+        toggleButton.addEventListener('click', function() {
+            commentsList.classList.toggle('show');
+            if (commentsList.classList.contains('show')) {
+                toggleButton.textContent = '收起评论区 ▲';
+                // 如果还没有加载评论，则加载评论
+                if (commentsList.children.length === 0) {
+                    loadComments();
+                }
+            } else {
+                toggleButton.textContent = '展开评论区 ▼';
+            }
+        });
+        
+        // 显示添加评论表单
+        addCommentBtn.addEventListener('click', function() {
+            addCommentForm.classList.add('show');
+        });
+        
+        // 取消添加评论
+        cancelComment.addEventListener('click', function() {
+            addCommentForm.classList.remove('show');
+            commentContent.value = '';
+            addCommentMessage.innerHTML = '';
+        });
+        
+        // 提交评论
+        submitComment.addEventListener('click', async function() {
+            const content = commentContent.value.trim();
+            if (!content) {
+                addCommentMessage.innerHTML = '<div class="error">评论内容不能为空</div>';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/comment/add', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        commentContent: content,
+                        userId: 1, // 这里应该从token中获取用户ID，暂时写死为1
+                        pageId: PAGE_ID
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.code === 200) {
+                    addCommentMessage.innerHTML = '<div class="success">评论添加成功</div>';
+                    commentContent.value = '';
+                    
+                    // 隐藏表单
+                    setTimeout(() => {
+                        addCommentForm.classList.remove('show');
+                        addCommentMessage.innerHTML = '';
+                    }, 1000);
+                    
+                    // 重新加载评论
+                    loadComments();
+                } else {
+                    throw new Error(data.message || '评论添加失败');
+                }
+            } catch (error) {
+                console.error('添加评论错误:', error);
+                addCommentMessage.innerHTML = `<div class="error">添加失败: ${error.message}</div>`;
+            }
+        });
+        
+        // 加载评论数据
+        async function loadComments() {
+            // 显示加载中
+            commentsList.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const response = await fetch(`/api/comment/list?pageId=${PAGE_ID}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.code === 200) {
+                    // 清空加载提示
+                    commentsList.innerHTML = '';
+                    
+                    // 渲染评论列表
+                    if (data.data && data.data.length > 0) {
+                        data.data.forEach(comment => {
+                            const li = document.createElement('li');
+                            li.className = 'comment-item';
+                            li.innerHTML = `
+                                <div class="comment-author">用户ID: ${comment.userId}</div>
+                                <div class="comment-content">${comment.commentContent}</div>
+                                <div class="comment-date">评论ID: ${comment.commentId}</div>
+                            `;
+                            commentsList.appendChild(li);
+                        });
+                    } else {
+                        commentsList.innerHTML = '<div class="loading">暂无评论</div>';
+                    }
+                } else {
+                    throw new Error(data.message || '获取评论失败');
+                }
+            } catch (error) {
+                console.error('获取评论错误:', error);
+                commentsList.innerHTML = `<div class="error">加载失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 页面跳转
+        document.getElementById('prevButton').addEventListener('click', function() {
+            window.location.href = 'page4.html';
+        });
+        
+        document.getElementById('nextButton').addEventListener('click', function() {
+            window.location.href = 'page6.html';
+        });
+    </script>
+</body>
+</html>

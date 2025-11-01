@@ -7,9 +7,9 @@ import java.util.List;
 @Mapper
 public interface CommentMapper {
     
-    @Select("SELECT comment_id as commentId, comment_content as commentContent, user_id as userId FROM comment")
-    List<Comment> findAllComments();
+    @Select("SELECT comment_id as commentId, comment_content as commentContent, user_id as userId, page_id as pageId FROM comment WHERE page_id=#{pageId}")
+    List<Comment> findAllComments(Integer pageId);
     
-    @Insert("INSERT INTO comment(comment_content, user_id) VALUES(#{commentContent}, #{userId})")
+    @Insert("INSERT INTO comment(comment_content, user_id, page_id) VALUES(#{commentContent}, #{userId}, #{pageId})")
     int insertComment(Comment comment);
 }
