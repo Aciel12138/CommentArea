@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实验报告生成器</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 500px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+            font-size: 2rem;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        input:focus {
+            outline: none;
+            border-color: #42b983;
+            box-shadow: 0 0 0 2px rgba(66, 185, 131, 0.2);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #42b983 0%, #3498db 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+        button:hover {
+            background: linear-gradient(135deg, #3aa876 0%, #2980b9 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .file-info {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .back-link a {
+            color: #42b983;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #42b983;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>实验报告生成器</h2>
+        <form id="reportForm">
+            <div class="form-group">
+                <label for="zipFile">选择ZIP文件:</label>
+                <input type="file" id="zipFile" name="file" accept=".zip" required>
+                <div class="file-info" id="fileInfo"></div>
+            </div>
+            <div class="form-group">
+                <label for="reportName">报告名称:</label>
+                <input type="text" id="reportName" name="reportName" value="实验报告" placeholder="请输入报告名称">
+            </div>
+            <button type="submit" id="generateBtn">生成实验报告</button>
+        </form>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>正在生成报告，请稍候...</p>
+        </div>
+        
+        <div id="result" class="result"></div>
+        
+        <div class="back-link">
+            <a href="index.html">返回首页</a>
+        </div>
+    </div>
+
+    <script>
+        // 显示文件信息
+        document.getElementById('zipFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const fileInfo = document.getElementById('fileInfo');
+            
+            if (file) {
+                fileInfo.textContent = `文件名: ${file.name}, 大小: ${(file.size / 1024).toFixed(2)} KB`;
+            } else {
+                fileInfo.textContent = '';
+            }
+        });
+
+        // 处理表单提交
+        document.getElementById('reportForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('zipFile');
+            const reportNameInput = document.getElementById('reportName');
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            const generateBtn = document.getElementById('generateBtn');
+            
+            // 隐藏之前的结果
+            resultDiv.style.display = 'none';
+            
+            if (!fileInput.files.length) {
+                showResult('请选择一个ZIP文件', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const reportName = reportNameInput.value || '实验报告';
+            
+            // 检查文件类型
+            if (!file.name.endsWith('.zip')) {
+                showResult('请选择ZIP格式的文件', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('reportName', reportName);
+            
+            // 显示加载状态
+            loadingDiv.style.display = 'block';
+            generateBtn.disabled = true;
+            
+            try {
+                // 获取JWT令牌
+                const token = localStorage.getItem('token');
+                
+                // 准备请求头
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+                
+                const response = await fetch('http://localhost:8081/api/report/generate', {
+                    method: 'POST',
+                    headers: headers,
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    // 获取文件名
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let filename = reportName + '.docx';
+                    if (contentDisposition) {
+                        const filenameMatch = contentDisposition.match(/filename="?(.+?)"?$/);
+                        if (filenameMatch && filenameMatch[1]) {
+                            filename = filenameMatch[1];
+                        }
+                    }
+                    
+                    // 下载文件
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    showResult('实验报告生成成功！正在下载...', 'success');
+                } else if (response.status === 401) {
+                    showResult('请先登录再生成实验报告', 'error');
+                } else {
+                    showResult('生成实验报告时出错，请重试', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showResult('网络错误，请重试: ' + error.message, 'error');
+            } finally {
+                // 隐藏加载状态
+                loadingDiv.style.display = 'none';
+                generateBtn.disabled = false;
+            }
+        });
+        
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.classList.remove('success', 'error');
+            resultDiv.classList.add(type);
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

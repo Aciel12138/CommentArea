@@ -4,6 +4,7 @@ import org.example.commentarea.entity.RestBean;
 import org.example.commentarea.entity.dto.Comment;
 import org.example.commentarea.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,10 +16,12 @@ public class CommentController {
     
     @Autowired
     private CommentService commentService;
-    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     @GetMapping("/list")
     public RestBean<List<Comment>> listComments(@RequestParam Integer pageId) {
         List<Comment> comments = commentService.findAllComments(pageId);
+        System.out.println(passwordEncoder.encode("123456"));
         return RestBean.success(comments);
     }
     
@@ -30,5 +33,6 @@ public class CommentController {
         } else {
             return RestBean.failure(400, "评论添加失败");
         }
+
     }
 }
