@@ -1,4 +1,14 @@
 spring:
+  mail:
+    host: smtp.163.com
+    username: 18904183715@163.com
+    password: BXqhLLSriFdPYpwY
+  rabbitmq:
+    host: 192.168.48.128
+    port: 5672
+    username: admin
+    password: admin
+    virtual-host: /
   application:
     name: commentArea
   datasource:
